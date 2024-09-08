@@ -1,12 +1,12 @@
 #define SOFT_RX 4    // Softserial RX port
 #define SOFT_TX 5    // Softserial TX port
 
-#define speedPinR 9    //  RIGHT PWM pin connect MODEL-X ENA
-#define RightMotorDirPin1  12    //Right Motor direction pin 1 to MODEL-X IN1 
-#define RightMotorDirPin2  11    //Right Motor direction pin 2 to MODEL-X IN2
+#define speedPinR 9    // RIGHT PWM pin connect MODEL-X ENA
+#define RightMotorDirPin1 12    // Right Motor direction pin 1 to MODEL-X IN1 
+#define RightMotorDirPin2 11    // Right Motor direction pin 2 to MODEL-X IN2
 #define speedPinL 6    // Left PWM pin connect MODEL-X ENB
-#define LeftMotorDirPin1  7    //Left Motor direction pin 1 to MODEL-X IN3 
-#define LeftMotorDirPin2  8    //Left Motor direction pin 1 to MODEL-X IN4 
+#define LeftMotorDirPin1 7    // Left Motor direction pin 1 to MODEL-X IN3 
+#define LeftMotorDirPin2 8    // Left Motor direction pin 1 to MODEL-X IN4 
 #define speedIncrement 10
 
 #include "WiFiEsp.h"
@@ -25,12 +25,15 @@ char pass[] = "cyRvjmnr6dqh";   // replace *** with your router wifi password
 char packetBuffer[255];    // Buffer to hold incoming data
 int speed_left = 200, speed_right = 200;
 int ledPin = 13;
-bool leftDirBool=true, rightDirBool=true, stopBool=true, ledBool=true;
+bool leftDirBool = true, rightDirBool = true, stopBool = true, ledBool = true;
 
 void setup() {
   pinMode(ledPin, OUTPUT);
-  for(int i=0; i<3; i++){digitalWrite(ledPin,HIGH);delay(250);digitalWrite(ledPin,LOW);delay(250);} 
-  digitalWrite(ledPin,HIGH);
+  for(int i = 0; i < 3; i++) {
+    digitalWrite(ledPin, HIGH); delay(250);
+    digitalWrite(ledPin, LOW); delay(250);
+  } 
+  digitalWrite(ledPin, HIGH);
  
   Serial.begin(9600);   // initialize serial for debugging
   Serial1.begin(115200);    // initialize serial for ESP module
@@ -47,7 +50,7 @@ void setup() {
     while (true); // don't continue
   }
 
-   while ( status != WL_CONNECTED) {
+   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to WPA SSID: ");
     Serial.println(ssid);
     // Connect to WPA/WPA2 network
@@ -62,7 +65,7 @@ void setup() {
   Serial.print("Listening on port ");
   Serial.println(localPort);
 
-  digitalWrite(ledPin,LOW);
+  digitalWrite(ledPin, LOW);
 }
 
 void loop() {
@@ -79,39 +82,61 @@ void loop() {
     Serial.print("Received command: ");
     Serial.println(packetBuffer); // Print the received string
     
-    processCommand(String(packetBuffer)); // Process the command
+    // Process the command and get a response
+    String response = processCommand(String(packetBuffer)); 
+
+    // Send the response back to the client
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    Udp.write(response.c_str());
+    Udp.endPacket();
+
+    Serial.print("Sent response: ");
+    Serial.println(response); // Print the response sent to the client
   }
 }
 
-void processCommand(String command) {
+// Process the received command and return a string as response
+String processCommand(String command) {
   command.trim(); // Remove any leading/trailing whitespace
+  String data = "";
+
   if (command.equalsIgnoreCase("W")) {
     speed_left += speedIncrement;
     speed_right += speedIncrement;
     updateMotorspeed();
+    data = "Accelerating";
   } else if (command.equalsIgnoreCase("S")) {
     speed_left -= speedIncrement;
     speed_right -= speedIncrement;
     updateMotorspeed();
+    data = "Decelerating";
   } else if (command.equalsIgnoreCase("O")) {
     start();
+    data = "Motors started";
   } else if (command.equalsIgnoreCase("L")) {
     stop();
+    data = "Motors stopped";
   } else if (command.equalsIgnoreCase("Q")) {
     speed_left += speedIncrement;
     updateMotorspeed();
+    data = "Left motor speed increased";
   } else if (command.equalsIgnoreCase("A")) {
     speed_left -= speedIncrement;
     updateMotorspeed();
+    data = "Left motor speed decreased";
   } else if (command.equalsIgnoreCase("E")) {
     speed_right += speedIncrement;
     updateMotorspeed();
+    data = "Right motor speed increased";
   } else if (command.equalsIgnoreCase("D")) {
     speed_right -= speedIncrement;
     updateMotorspeed();
+    data = "Right motor speed decreased";
   } else {
-    Serial.println("Unknown command.");
+    data = "Unknown command";
   }
+  
+  return data;  // Return the result to send back to the client
 }
 
 void printWifiStatus(){
@@ -127,41 +152,41 @@ void printWifiStatus(){
   Serial.println();
 }
 
-void rightPositive(void){
+void rightPositive(void) {
   Serial.println("Right +");
   digitalWrite(RightMotorDirPin1, HIGH);
   digitalWrite(RightMotorDirPin2, LOW);
   updateMotorspeed();
 }
 
-void rightNegative(void){
+void rightNegative(void) {
   Serial.println("Right -");
   digitalWrite(RightMotorDirPin1, LOW);
   digitalWrite(RightMotorDirPin2, HIGH);
   updateMotorspeed();
 }
 
-void leftPositive(void){
+void leftPositive(void) {
   Serial.println("Left +");
   digitalWrite(LeftMotorDirPin1, HIGH);
   digitalWrite(LeftMotorDirPin2, LOW);
   updateMotorspeed();
 }
 
-void leftNegative(void){
+void leftNegative(void) {
   Serial.println("Left -");
   digitalWrite(LeftMotorDirPin1, LOW);
   digitalWrite(LeftMotorDirPin2, HIGH);
   updateMotorspeed();
 }
 
-void updateMotorspeed(){
+void updateMotorspeed() {
   Serial.println("Update motor speed");
   analogWrite(speedPinL, speed_left); 
   analogWrite(speedPinR, speed_right);   
 }
 
-void start(void){
+void start(void) {
   Serial.println("Start");
   if (leftDirBool) {
     leftPositive();
@@ -175,7 +200,7 @@ void start(void){
   }
 }
 
-void stop(void){
+void stop(void) {
   Serial.println("Stop");
   digitalWrite(RightMotorDirPin1, LOW);
   digitalWrite(RightMotorDirPin2, LOW);
