@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="my_world">
+    
+    <!-- Gravity -->
+    <gravity>0 0 -9.8</gravity>
+
+    <!-- Ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Your custom robot -->
+    <include>
+      <uri>model://my_robot</uri>
+      <pose>0 0 0 0 0 0</pose> <!-- Position of the robot -->
+    </include>
+
+    <!-- Static object (a box) -->
+    <model name="static_box">
+      <static>true</static>
+      <link name="box_link">
+        <collision name="box_collision">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="box_visual">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <pose>2 2 0.5 0 0 0</pose>
+    </model>
+
+    <!-- Mobile object (sphere) -->
+    <model name="mobile_sphere">
+      <static>false</static>
+      <link name="sphere_link">
+        <collision name="sphere_collision">
+          <geometry>
+            <sphere>
+              <radius>0.5</radius>
+            </sphere>
+          </geometry>
+        </collision>
+        <visual name="sphere_visual">
+          <geometry>
+            <sphere>
+              <radius>0.5</radius>
+            </sphere>
+          </geometry>
+        </visual>
+      </link>
+      <pose>-2 -2 0.5 0 0 0</pose> <!-- Initial position of the sphere -->
+    </model>
+  </world>
+</sdf>
